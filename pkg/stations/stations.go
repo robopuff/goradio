@@ -1,7 +1,7 @@
 package stations
 
 import (
-	"bufio"
+	"encoding/csv"
 	"io"
 	"log"
 	"net/http"
@@ -20,6 +20,7 @@ type Station struct {
 
 // StationsList list of available stations
 type StationsList struct {
+	path     string
 	stations []*Station
 }
 
@@ -41,6 +42,12 @@ func (l *StationsList) GetSelected(selected int) *Station {
 	return l.stations[selected]
 }
 
+// Reload reloads list
+func (l *StationsList) Reload() {
+	load := Load(l.path)
+	l.stations = load.stations
+}
+
 // Load load stations from file
 func Load(path string) *StationsList {
 	if _, err := os.Stat(path); err != nil {
@@ -54,24 +61,28 @@ func Load(path string) *StationsList {
 
 	f, err := os.Open(path)
 	if err != nil {
-		log.Fatalf("cannot open stations file: %v", err.Error())
+		log.Fatalf("cannot open stations file: %v", err)
 	}
 	defer f.Close()
 
 	s := []*Station{}
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		line := strings.Trim(scanner.Text(), "\n\r")
-		pair := strings.Split(line, ",")
-		if len(pair) == 2 {
-			s = append(s, &Station{
-				Name: strings.TrimSpace(pair[0]),
-				URL:  strings.TrimSpace(pair[1]),
-			})
+	reader := csv.NewReader(f)
+	for {
+		line, err := reader.Read()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			log.Fatalf("cannot process stations csv: %v", err)
 		}
+
+		s = append(s, &Station{
+			Name: strings.TrimSpace(line[0]),
+			URL:  strings.TrimSpace(line[1]),
+		})
 	}
 
 	return &StationsList{
+		path:     path,
 		stations: s,
 	}
 }

@@ -51,6 +51,10 @@ func manageKeyboardEvent(e tui.Event, d driver.Driver) int {
 	case "s":
 		d.Close()
 		current = -1
+	case "R":
+		d.Close()
+		stationsConf.Reload()
+		stationsList.Rows = stationsConf.GetRows()
 	case "k", "<Up>":
 		stationsList.ScrollUp()
 	case "j", "<Down>":

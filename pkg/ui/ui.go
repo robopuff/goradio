@@ -44,7 +44,7 @@ func Init(stationsConfList *stations.StationsList, debugFlag bool) error {
 	playingParagraph.TextStyle.Fg = tui.ColorRed
 
 	footerParagraph = widgets.NewParagraph()
-	footerParagraph.Text = fmt.Sprintf(formatter, "k/↑ : Up | j/↓: Down | Enter: Select | p: Pause | m: Mute | s: Stop | +: Louder | -: Quieter | q: Quit")
+	footerParagraph.Text = fmt.Sprintf(formatter, "k/↑ : Up | j/↓: Down | Enter: Select | p: Pause | m: Mute | s: Stop | +: Louder | -: Quieter | R: Refresh | q: Quit")
 	footerParagraph.WrapText = false
 	footerParagraph.PaddingLeft = -1
 	footerParagraph.PaddingRight = -1

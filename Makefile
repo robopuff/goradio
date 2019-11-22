@@ -3,8 +3,8 @@
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' Makefile | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "[32m%-40s[0m %s\n", $$1, $$2}'
 
-run: ## Run code without building executable
-	go run main.go
+run: ## Run debug code without building executable
+	go run main.go -d
 
 .PHONY: build
 build: ## Build an executable
