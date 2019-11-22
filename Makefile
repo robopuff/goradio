@@ -10,7 +10,14 @@ run: ## Run debug code without building executable
 build: ## Build an executable
 	go build -o build/goradio
 
-move-executable: ## Move executable to ~/.local/bin
-	mv build/goradio ~/.local/bin/goradio
+install: ## Install executable
+	 go install
 
-install: build move-executable ## Build and install executable
+clear-build: ## Clear content of build directory
+	rm build/goradio*
+
+release: ## Build for windows, linux and darwin
+	for os in darwin linux windows; do \
+		env GOOS=$$os GOARCH=amd64 go build -o build/goradio-$$os-amd64; \
+	done; \
+	mv build/goradio-windows-amd64 build/goradio-windows-amd64.exe

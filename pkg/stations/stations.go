@@ -2,6 +2,7 @@ package stations
 
 import (
 	"encoding/csv"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -12,29 +13,29 @@ import (
 
 const stationsCsvURL = "https://raw.githubusercontent.com/coderholic/pyradio/master/pyradio/stations.csv"
 
-// Station station struct
-type Station struct {
+type station struct {
 	Name string
 	URL  string
 }
 
-// StationsList list of available stations
-type StationsList struct {
+// List list of available stations
+type List struct {
 	path     string
-	stations []*Station
+	stations []*station
 }
 
 // GetRows get list of stations for ui list
-func (l *StationsList) GetRows() []string {
-	list := []string{}
+func (l *List) GetRows(width int) []string {
+	formatter := fmt.Sprintf("%%-%ds", width-2)
+	var list []string
 	for _, s := range l.stations {
-		list = append(list, s.Name)
+		list = append(list, fmt.Sprintf(formatter, s.Name))
 	}
 	return list
 }
 
 // GetSelected get selected station by it's index
-func (l *StationsList) GetSelected(selected int) *Station {
+func (l *List) GetSelected(selected int) *station {
 	if selected < 0 || selected > len(l.stations)-1 {
 		return nil
 	}
@@ -43,13 +44,13 @@ func (l *StationsList) GetSelected(selected int) *Station {
 }
 
 // Reload reloads list
-func (l *StationsList) Reload() {
+func (l *List) Reload() {
 	load := Load(l.path)
 	l.stations = load.stations
 }
 
 // Load load stations from file
-func Load(path string) *StationsList {
+func Load(path string) *List {
 	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
 			err = downloadStations(path)
@@ -65,7 +66,7 @@ func Load(path string) *StationsList {
 	}
 	defer f.Close()
 
-	s := []*Station{}
+	var s []*station
 	reader := csv.NewReader(f)
 	for {
 		line, err := reader.Read()
@@ -75,13 +76,13 @@ func Load(path string) *StationsList {
 			log.Fatalf("cannot process stations csv: %v", err)
 		}
 
-		s = append(s, &Station{
+		s = append(s, &station{
 			Name: strings.TrimSpace(line[0]),
 			URL:  strings.TrimSpace(line[1]),
 		})
 	}
 
-	return &StationsList{
+	return &List{
 		path:     path,
 		stations: s,
 	}

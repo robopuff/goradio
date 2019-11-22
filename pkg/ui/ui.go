@@ -2,8 +2,6 @@ package ui
 
 import (
 	"fmt"
-	"time"
-
 	"github.com/robopuff/goradio/pkg/driver"
 	"github.com/robopuff/goradio/pkg/stations"
 
@@ -12,76 +10,80 @@ import (
 )
 
 var (
-	debug            bool
-	w, h, current    int
-	stationsConf     *stations.StationsList
-	playingParagraph *widgets.Paragraph
-	footerParagraph  *widgets.Paragraph
-	stationsList     *widgets.List
-	loggerList       *widgets.List
-	drawables        []tui.Drawable
+	current            = -1
+	debug              bool
+	w, h               int
+	stationsList       *stations.List
+	uiPlayingParagraph *widgets.Paragraph
+	uiFooterParagraph  *widgets.Paragraph
+	uiStationsList     *widgets.List
+	uiLoggerList       *widgets.List
+	drawables          []tui.Drawable
 )
 
 // Init initialize UI
-func Init(stationsConfList *stations.StationsList, debugFlag bool) error {
+func Init(csvStationsList *stations.List, debugFlag bool) error {
+	debug = debugFlag
 	if err := tui.Init(); nil != err {
 		return err
 	}
 
-	debug = debugFlag
-	current = -1
-
 	w, h = tui.TerminalDimensions()
 
-	stationsConf = stationsConfList
+	stationsList = csvStationsList
 
 	formatter := fmt.Sprintf("%%-%ds", w)
 
-	playingParagraph = widgets.NewParagraph()
-	playingParagraph.Text = fmt.Sprintf(formatter, "Currently playing: None")
-	playingParagraph.SetRect(0, -1, w, 3)
-	playingParagraph.Border = false
-	playingParagraph.TextStyle.Fg = tui.ColorRed
+	uiPlayingParagraph = widgets.NewParagraph()
+	uiPlayingParagraph.Text = fmt.Sprintf(formatter, "Currently playing: None")
+	uiPlayingParagraph.SetRect(0, -1, w, 3)
+	uiPlayingParagraph.Border = false
+	uiPlayingParagraph.TextStyle.Fg = tui.ColorRed
 
-	footerParagraph = widgets.NewParagraph()
-	footerParagraph.Text = fmt.Sprintf(formatter, "k/↑ : Up | j/↓: Down | Enter: Select | p: Pause | m: Mute | s: Stop | +: Louder | -: Quieter | R: Refresh | q: Quit")
-	footerParagraph.WrapText = false
-	footerParagraph.PaddingLeft = -1
-	footerParagraph.PaddingRight = -1
-	footerParagraph.SetRect(0, h-3, w, h)
-	footerParagraph.Border = false
-	footerParagraph.TextStyle.Fg = tui.ColorBlack
-	footerParagraph.TextStyle.Bg = 8
+	uiFooterParagraph = widgets.NewParagraph()
+	uiFooterParagraph.Text = fmt.Sprintf(formatter, "k/↑ : Up | j/↓: Down | Enter: Select | p: Pause | m: Mute | s: Stop | +: Louder | -: Quieter | R: Refresh | q: Quit")
+	uiFooterParagraph.WrapText = false
+	uiFooterParagraph.PaddingLeft = -1
+	uiFooterParagraph.PaddingRight = -1
+	uiFooterParagraph.SetRect(0, h-3, w, h)
+	uiFooterParagraph.Border = false
+	uiFooterParagraph.TextStyle.Fg = tui.ColorBlack
+	uiFooterParagraph.TextStyle.Bg = 8
 
-	loggerList = widgets.NewList()
-	loggerList.Title = "[ log ]"
-	loggerList.SetRect(w/2, 1, w-1, h-2)
-	loggerList.TextStyle.Fg = tui.ColorBlue
-	loggerList.BorderStyle.Fg = 8
-	loggerList.SelectedRowStyle.Fg = loggerList.TextStyle.Fg
-	loggerList.Rows = []string{""}
+	uiLoggerList = widgets.NewList()
+	uiLoggerList.Title = "[ log ]"
+	uiLoggerList.SetRect(w/2, 1, w-1, h-2)
+	uiLoggerList.TextStyle.Fg = tui.ColorBlue
+	uiLoggerList.BorderStyle.Fg = 8
+	uiLoggerList.SelectedRowStyle.Fg = uiLoggerList.TextStyle.Fg
+	uiLoggerList.Rows = []string{""}
 
-	stationsList = widgets.NewList()
-	stationsList.Title = "[ stations ]"
-	stationsList.Rows = stationsConf.GetRows()
-	stationsList.SelectedRowStyle.Fg = tui.ColorBlack
-	stationsList.SelectedRowStyle.Bg = tui.ColorWhite
-	stationsList.BorderStyle.Fg = 8
+	uiStationsList = widgets.NewList()
+	uiStationsList.Title = "[ stations ]"
+	uiStationsList.TextStyle.Fg = 8
+	uiStationsList.TextStyle.Modifier = tui.ModifierBold
+	uiStationsList.SelectedRowStyle.Modifier = tui.ModifierBold
+	uiStationsList.SelectedRowStyle.Fg = tui.ColorWhite
+	uiStationsList.SelectedRowStyle.Bg = 8
+	uiStationsList.BorderStyle.Fg = 8
+	uiStationsList.WrapText = false
 
 	if debug {
-		stationsList.SetRect(0, 1, (w/2)-1, h-2)
+		uiStationsList.SetRect(0, 1, (w/2)-1, h-2)
 	} else {
-		stationsList.SetRect(0, 1, w, h-2)
+		uiStationsList.SetRect(0, 1, w, h-2)
 	}
+
+	uiStationsList.Rows = csvStationsList.GetRows(uiStationsList.Size().X)
 
 	drawables = []tui.Drawable{
-		playingParagraph,
-		footerParagraph,
-		stationsList,
+		uiPlayingParagraph,
+		uiFooterParagraph,
+		uiStationsList,
 	}
 
 	if debug {
-		drawables = append(drawables, loggerList)
+		drawables = append(drawables, uiLoggerList)
 	}
 
 	return nil
@@ -92,7 +94,6 @@ func Run(d driver.Driver) {
 	render()
 
 	uiEvents := tui.PollEvents()
-	ticker := time.NewTicker(time.Second).C
 
 	defer (func() {
 		d.Close()
@@ -107,7 +108,6 @@ func Run(d driver.Driver) {
 			if r := manageKeyboardEvent(e, d); r != 0 {
 				return
 			}
-		case <-ticker:
 			render()
 		}
 	}
@@ -122,7 +122,7 @@ func log(m string) {
 		return
 	}
 
-	loggerList.Rows = append(loggerList.Rows, fmt.Sprintf("%s", m))
-	loggerList.ScrollBottom()
-	tui.Render(loggerList)
+	uiLoggerList.Rows = append(uiLoggerList.Rows, fmt.Sprintf("%s", m))
+	uiLoggerList.ScrollBottom()
+	tui.Render(uiLoggerList)
 }

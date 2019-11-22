@@ -8,72 +8,74 @@ import (
 	"github.com/robopuff/goradio/pkg/driver"
 )
 
+var colorSelected = "(fg:black,bg:white)"
+
 func manageKeyboardEvent(e tui.Event, d driver.Driver) int {
 	if e.Type == tui.ResizeEvent {
 		tui.Clear()
-		Init(stationsConf, debug)
+		Init(stationsList, debug)
 	}
 
 	switch e.ID {
-	case "q", "<C-c>", "<Esc>":
-		d.Close()
-		return 1
-	case "m":
-		d.Mute()
 	case "<Enter>":
-		selected := stationsList.SelectedRow
-		selectedStation := stationsConf.GetSelected(selected)
-
-		currentStation := stationsConf.GetSelected(current)
+		selected := uiStationsList.SelectedRow
+		selectedStation := stationsList.GetSelected(selected)
+		currentStation := stationsList.GetSelected(current)
 
 		if selected == current {
 			d.Pause()
 			return 0
 		}
 
-		if currentStation != nil {
-			stationsList.Rows[current] = currentStation.Name
-		}
-
 		if selectedStation == nil {
-			log("Invalid station selected")
 			return 0
 		}
 
-		stationsList.Rows[selected] = fmt.Sprintf("* %s", selectedStation.Name)
-
-		d.Close()
+		if currentStation != nil {
+			removeStationSelection()
+		}
 
 		d.Play(selectedStation.URL)
 		current = selected
-	case "p":
-		d.Pause()
+		addStationSelection()
 	case "s":
+		if current < 0 {
+			return 0
+		}
+
 		d.Close()
+		removeStationSelection()
 		current = -1
 	case "R":
 		d.Close()
-		stationsConf.Reload()
-		stationsList.Rows = stationsConf.GetRows()
+		current = -1
+		stationsList.Reload()
+		uiStationsList.Rows = stationsList.GetRows(uiStationsList.Size().X)
+	case "m":
+		d.Mute()
+	case "p":
+		d.Pause()
 	case "k", "<Up>":
-		stationsList.ScrollUp()
+		uiStationsList.ScrollUp()
 	case "j", "<Down>":
-		stationsList.ScrollDown()
+		uiStationsList.ScrollDown()
 	case "K", "<PageUp>":
-		stationsList.ScrollPageUp()
+		uiStationsList.ScrollPageUp()
 	case "J", "<PageDown>":
-		stationsList.ScrollPageDown()
+		uiStationsList.ScrollPageDown()
 	case "h", "<Left>":
-		loggerList.ScrollPageUp()
+		uiLoggerList.ScrollPageUp()
 	case "l", "<Right>":
-		loggerList.ScrollPageDown()
-	case "+":
+		uiLoggerList.ScrollPageDown()
+	case "+", "=":
 		d.IncVolume()
 	case "-":
 		d.DecVolume()
+	case "q", "<C-c>", "<Esc>":
+		d.Close()
+		return 1
 	}
 
-	render()
 	return 0
 }
 
@@ -92,9 +94,17 @@ func manageDriverLogs(d driver.Driver) {
 					log(fmt.Sprintf("Pipe closed: %v", err.Error()))
 					break
 				}
-
 				log(data[:len(data)-1])
 			}
 		}
 	}
+}
+
+func addStationSelection() {
+	uiStationsList.Rows[current] = fmt.Sprintf("[%v]%s", uiStationsList.Rows[current], colorSelected)
+}
+
+func removeStationSelection() {
+	rowString := string(uiStationsList.Rows[current])
+	uiStationsList.Rows[current] = rowString[1 : len(rowString)-1-len(colorSelected)]
 }

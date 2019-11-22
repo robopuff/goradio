@@ -26,7 +26,11 @@ func (driver *MPlayer) PipeChan() chan io.ReadCloser {
 // Play play provided url
 func (driver *MPlayer) Play(url string) {
 	if driver.isPlaying {
-		return
+		if driver.streamURL == url {
+			return
+		}
+
+		driver.Close()
 	}
 
 	var err error
@@ -38,16 +42,16 @@ func (driver *MPlayer) Play(url string) {
 
 	driver.in, err = driver.command.StdinPipe()
 	if nil != err {
-		log.Fatalf("cannot map mplayer stdin: %v", err.Error())
+		log.Fatalf("cannot map mplayer stdin: %v", err)
 	}
 
 	driver.out, err = driver.command.StdoutPipe()
 	if nil != err {
-		log.Fatalf("cannot map mplayer stdout: %v", err.Error())
+		log.Fatalf("cannot map mplayer stdout: %v", err)
 	}
 
 	if err = driver.command.Start(); nil != err {
-		log.Fatalf("cannot star mplayer: %v", err.Error())
+		log.Fatalf("cannot start mplayer: %v", err)
 	}
 
 	driver.isPlaying = true
