@@ -34,36 +34,29 @@ var (
 
 // Init initialize UI
 func Init(csvStationsList *stations.List, debugFlag bool) error {
+	fullLineFormatter = fmt.Sprintf("%%-%ds", w)
 	debug = debugFlag
+	stationsList = csvStationsList
+
 	if err := tui.Init(); nil != err {
 		return err
 	}
 
-	w, h = tui.TerminalDimensions()
-
-	stationsList = csvStationsList
-
-	fullLineFormatter = fmt.Sprintf("%%-%ds", w)
-
 	uiPlayingParagraph = widgets.NewParagraph()
-	uiPlayingParagraph.SetRect(0, -1, w, 3)
 	uiPlayingParagraph.Border = false
 	uiPlayingParagraph.TextStyle.Fg = tui.ColorRed
-	setCurrentlyPlaying("")
 
 	uiFooterParagraph = widgets.NewParagraph()
 	uiFooterParagraph.Text = fmt.Sprintf(fullLineFormatter, helpFooter)
 	uiFooterParagraph.WrapText = false
 	uiFooterParagraph.PaddingLeft = -1
 	uiFooterParagraph.PaddingRight = -1
-	uiFooterParagraph.SetRect(0, h-3, w, h)
 	uiFooterParagraph.Border = false
 	uiFooterParagraph.TextStyle.Fg = tui.ColorBlack
 	uiFooterParagraph.TextStyle.Bg = colorGray
 
 	uiLoggerList = widgets.NewList()
-	uiLoggerList.Title = "[ sendToLog ]"
-	uiLoggerList.SetRect(w/2, 1, w-1, h-2)
+	uiLoggerList.Title = "[ log ]"
 	uiLoggerList.TextStyle.Fg = tui.ColorBlue
 	uiLoggerList.BorderStyle.Fg = colorGray
 	uiLoggerList.SelectedRowStyle.Fg = uiLoggerList.TextStyle.Fg
@@ -81,18 +74,10 @@ func Init(csvStationsList *stations.List, debugFlag bool) error {
 
 	volumeGauge = widgets.NewGauge()
 	volumeGauge.Border = false
-	volumeGauge.SetRect(w-21, -1, w-1, 2)
 	volumeGauge.Percent = 25
 	volumeGauge.Label = "25"
 
-	if debug {
-		uiStationsList.SetRect(0, 1, (w/2)-1, h-2)
-	} else {
-		uiStationsList.SetRect(0, 1, w, h-2)
-	}
-
-	uiStationsList.Rows = csvStationsList.GetRows(uiStationsList.Size().X)
-
+	windowResize()
 	drawables = []tui.Drawable{
 		uiPlayingParagraph,
 		volumeGauge,
@@ -105,6 +90,25 @@ func Init(csvStationsList *stations.List, debugFlag bool) error {
 	}
 
 	return nil
+}
+
+// Init initialize UI
+func windowResize() {
+	tui.Clear()
+	w, h = tui.TerminalDimensions()
+
+	uiPlayingParagraph.SetRect(0, -1, w, 3)
+	uiFooterParagraph.SetRect(0, h-3, w, h)
+	uiLoggerList.SetRect(w/2, 1, w-1, h-2)
+	volumeGauge.SetRect(w-21, -1, w-1, 2)
+
+	if debug {
+		uiStationsList.SetRect(0, 1, (w/2)-1, h-2)
+	} else {
+		uiStationsList.SetRect(0, 1, w, h-2)
+	}
+
+	uiStationsList.Rows = stationsList.GetRows(uiStationsList.Size().X)
 }
 
 // Run run UI and events

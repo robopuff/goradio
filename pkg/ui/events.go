@@ -3,7 +3,6 @@ package ui
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"regexp"
 	"strconv"
 
@@ -21,10 +20,7 @@ var colorSelected = "(fg:black,bg:white)"
 
 func manageKeyboardEvent(e tui.Event, d driver.Driver) int {
 	if e.Type == tui.ResizeEvent {
-		tui.Clear()
-		if err := Init(stationsList, debug); err != nil {
-			log.Fatalf("failed to initialize ui: %v", err)
-		}
+		windowResize()
 	}
 
 	switch e.ID {

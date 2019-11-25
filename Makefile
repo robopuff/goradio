@@ -18,6 +18,7 @@ clear-build: ## Clear content of build directory
 
 release: ## Build for windows, linux and darwin
 	for os in darwin linux windows; do \
-		env GOOS=$$os GOARCH=amd64 go build -o build/goradio-$$os-amd64; \
+		env GOOS=$$os GOARCH=amd64 go build -ldflags="-s -w" -o build/goradio-$$os-amd64; \
+		upx --brute build/goradio-$$os-amd64; \
 	done; \
 	mv build/goradio-windows-amd64 build/goradio-windows-amd64.exe
