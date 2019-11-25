@@ -44,6 +44,7 @@ func manageKeyboardEvent(e tui.Event, d driver.Driver) int {
 
 		d.Play(selectedStation.URL)
 		current = selected
+		setVolumeGauge("25")
 		addStationSelection()
 	case "s":
 		if current < 0 {
@@ -52,6 +53,7 @@ func manageKeyboardEvent(e tui.Event, d driver.Driver) int {
 
 		d.Close()
 		removeStationSelection()
+		setVolumeGauge("")
 		current = -1
 	case "R":
 		d.Close()
@@ -78,6 +80,8 @@ func manageKeyboardEvent(e tui.Event, d driver.Driver) int {
 		d.IncVolume()
 	case "-":
 		d.DecVolume()
+	//case "D":
+		//toggleDebug()
 	case "q", "<C-c>", "<Esc>":
 		d.Close()
 		return 1
@@ -109,16 +113,24 @@ func manageDriverLogs(d driver.Driver) {
 
 				match = volumeRegex.FindStringSubmatch(data)
 				if len(match) > 0 {
-					volume, _ := strconv.Atoi(match[1])
-					volumeGauge.Percent = volume
-					volumeGauge.Label = match[1]
-					render()
+					setVolumeGauge(match[1])
 				}
 
 				sendToLog(data[:len(data)-1])
 			}
 		}
 	}
+}
+
+func setVolumeGauge(value string) {
+	volume, _ := strconv.Atoi(value)
+	volumeGauge.Percent = volume
+	if value == "" {
+		value = " "
+	}
+
+	volumeGauge.Label = value
+	render()
 }
 
 func setCurrentlyPlaying(currently string) {

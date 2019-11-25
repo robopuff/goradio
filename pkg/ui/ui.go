@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+
 	"github.com/robopuff/goradio/pkg/driver"
 	"github.com/robopuff/goradio/pkg/stations"
 
@@ -74,8 +75,8 @@ func Init(csvStationsList *stations.List, debugFlag bool) error {
 
 	volumeGauge = widgets.NewGauge()
 	volumeGauge.Border = false
-	volumeGauge.Percent = 25
-	volumeGauge.Label = "25"
+	volumeGauge.Percent = 0
+	volumeGauge.Label = " "
 
 	windowResize()
 	drawables = []tui.Drawable{
@@ -120,6 +121,10 @@ func Run(d driver.Driver) {
 	defer (func() {
 		d.Close()
 		tui.Close()
+
+		if r := recover(); r != nil {
+			fmt.Printf("panic: %v\n", r)
+		}
 	})()
 
 	go manageDriverLogs(d)
@@ -135,16 +140,31 @@ func Run(d driver.Driver) {
 	}
 }
 
+func toggleDebug() {
+	debug = !debug
+
+	if debug {
+		drawables = append(drawables, uiLoggerList)
+	} else {
+		drawables = drawables[:len(drawables)-1]
+	}
+
+	windowResize()
+	render()
+}
+
 func render() {
 	tui.Render(drawables...)
 }
 
 func sendToLog(m string) {
-	if !debug {
-		return
+	uiLoggerList.Rows = append(uiLoggerList.Rows, fmt.Sprintf("%s", m))
+	if len(uiLoggerList.Rows) > 1000 {
+		uiLoggerList.Rows = uiLoggerList.Rows[500:]
 	}
 
-	uiLoggerList.Rows = append(uiLoggerList.Rows, fmt.Sprintf("%s", m))
 	uiLoggerList.ScrollBottom()
-	tui.Render(uiLoggerList)
+	if debug {
+		tui.Render(uiLoggerList)
+	}
 }
