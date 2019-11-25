@@ -3,9 +3,18 @@ package ui
 import (
 	"bufio"
 	"fmt"
+	"log"
+	"regexp"
+	"strconv"
+
+	"github.com/robopuff/goradio/pkg/driver"
 
 	tui "github.com/gizak/termui/v3"
-	"github.com/robopuff/goradio/pkg/driver"
+)
+
+const (
+	regexTitle  = `(?m)^ICY Info: StreamTitle='(.*?)';`
+	regexVolume = `(?m)Volume: (\d+)`
 )
 
 var colorSelected = "(fg:black,bg:white)"
@@ -13,7 +22,9 @@ var colorSelected = "(fg:black,bg:white)"
 func manageKeyboardEvent(e tui.Event, d driver.Driver) int {
 	if e.Type == tui.ResizeEvent {
 		tui.Clear()
-		Init(stationsList, debug)
+		if err := Init(stationsList, debug); err != nil {
+			log.Fatalf("failed to initialize ui: %v", err)
+		}
 	}
 
 	switch e.ID {
@@ -80,9 +91,8 @@ func manageKeyboardEvent(e tui.Event, d driver.Driver) int {
 }
 
 func manageDriverLogs(d driver.Driver) {
-	if !debug {
-		return
-	}
+	titleRegex := regexp.MustCompile(regexTitle)
+	volumeRegex := regexp.MustCompile(regexVolume)
 
 	for {
 		select {
@@ -91,13 +101,37 @@ func manageDriverLogs(d driver.Driver) {
 			for {
 				data, err := reader.ReadString('\n')
 				if err != nil {
-					log(fmt.Sprintf("Pipe closed: %v", err.Error()))
+					setCurrentlyPlaying("")
+					sendToLog(fmt.Sprintf("Pipe closed: %v", err.Error()))
 					break
 				}
-				log(data[:len(data)-1])
+
+				match := titleRegex.FindStringSubmatch(data)
+				if len(match) > 0 {
+					setCurrentlyPlaying(match[1])
+				}
+
+				match = volumeRegex.FindStringSubmatch(data)
+				if len(match) > 0 {
+					volume, _ := strconv.Atoi(match[1])
+					volumeGauge.Percent = volume
+					volumeGauge.Label = match[1]
+					render()
+				}
+
+				sendToLog(data[:len(data)-1])
 			}
 		}
 	}
+}
+
+func setCurrentlyPlaying(currently string) {
+	format := fmt.Sprintf(fullLineFormatter, currentlyPlayingFormat)
+	if currently == "" {
+		currently = "None"
+	}
+	uiPlayingParagraph.Text = fmt.Sprintf(format, currently)
+	render()
 }
 
 func addStationSelection() {

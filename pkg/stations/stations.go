@@ -55,7 +55,7 @@ func Load(path string) *List {
 		if os.IsNotExist(err) {
 			err = downloadStations(path)
 			if err != nil {
-				log.Fatalf("Cannot find or install stations ")
+				log.Fatalf("cannot find or install stations: %v", err)
 			}
 		}
 	}
@@ -91,10 +91,12 @@ func Load(path string) *List {
 func downloadStations(path string) error {
 	dir := filepath.Dir(path)
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		err := os.Chdir(dir)
+		log.Printf("pyradio config dir not found, trying to create")
+		err := os.MkdirAll(dir, os.ModePerm)
 		if err != nil {
 			return err
 		}
+		log.Printf("created directory: %v", dir)
 	}
 
 	out, err := os.Create(path)
