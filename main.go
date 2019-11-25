@@ -20,12 +20,15 @@ func main() {
 	flagDebugMode := flag.Bool("d", false, "Debug mode (shows logger window)")
 	flag.Parse()
 
+	d = driver.NewMPlayer(*flagMplayer)
+	if err := d.CheckPrerequisites(); err != nil {
+		log.Fatalf("system failed driver prerequisites check: %v", err)
+	}
+
 	s := stations.Load(*flagStations)
 
 	if err := ui.Init(s, *flagDebugMode); err != nil {
 		log.Fatalf("failed to initialize ui: %v", err)
 	}
-
-	d = driver.NewMPlayer(*flagMplayer)
 	ui.Run(d)
 }

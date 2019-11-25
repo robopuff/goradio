@@ -1,6 +1,7 @@
 package driver
 
 import (
+	"errors"
 	"io"
 	"log"
 	"os/exec"
@@ -9,7 +10,7 @@ import (
 
 // MPlayer mplayer driver
 type MPlayer struct {
-	name      string
+	cliName   string
 	isPlaying bool
 	streamURL string
 	command   *exec.Cmd
@@ -21,6 +22,14 @@ type MPlayer struct {
 // PipeChan gets pipe channel
 func (driver *MPlayer) PipeChan() chan io.ReadCloser {
 	return driver.pipeChan
+}
+
+//CheckPrerequisites check prerequisites for driver
+func (driver *MPlayer) CheckPrerequisites() error {
+	if _, err := exec.LookPath(driver.cliName); err != nil {
+		return errors.New("mplayer not found")
+	}
+	return nil
 }
 
 // Play play provided url
@@ -35,9 +44,9 @@ func (driver *MPlayer) Play(url string) {
 
 	var err error
 	if strings.HasSuffix(url, ".m3u") || strings.HasSuffix(url, ".pls") {
-		driver.command = exec.Command(driver.name, "-quiet", "-playlist", url)
+		driver.command = exec.Command(driver.cliName, "-quiet", "-playlist", url)
 	} else {
-		driver.command = exec.Command(driver.name, "-quiet", url)
+		driver.command = exec.Command(driver.cliName, "-quiet", url)
 	}
 
 	driver.in, err = driver.command.StdinPipe()
@@ -111,7 +120,7 @@ func (driver *MPlayer) sendKey(key string) {
 // NewMPlayer create new MPlayer driver instance
 func NewMPlayer(executablePath string) *MPlayer {
 	return &MPlayer{
-		name:      executablePath,
+		cliName:   executablePath,
 		isPlaying: false,
 		pipeChan:  make(chan io.ReadCloser),
 	}
