@@ -29,19 +29,21 @@ var (
 	uiFooterParagraph  *widgets.Paragraph
 	uiStationsList     *widgets.List
 	uiLoggerList       *widgets.List
-	volumeGauge        *widgets.Gauge
+	volumeGauge        *volume
 	drawables          []tui.Drawable
 )
 
 // Init initialize UI
 func Init(csvStationsList *stations.List, debugFlag bool) error {
-	fullLineFormatter = fmt.Sprintf("%%-%ds", w)
-	debug = debugFlag
-	stationsList = csvStationsList
-
 	if err := tui.Init(); nil != err {
 		return err
 	}
+
+	w, h = tui.TerminalDimensions()
+	fullLineFormatter = fmt.Sprintf("%%-%ds", w)
+
+	debug = debugFlag
+	stationsList = csvStationsList
 
 	uiPlayingParagraph = widgets.NewParagraph()
 	uiPlayingParagraph.Border = false
@@ -73,12 +75,16 @@ func Init(csvStationsList *stations.List, debugFlag bool) error {
 	uiStationsList.BorderStyle.Fg = colorGray
 	uiStationsList.WrapText = false
 
-	volumeGauge = widgets.NewGauge()
+	volumeGauge = NewVolume()
 	volumeGauge.Border = false
 	volumeGauge.Percent = 0
-	volumeGauge.Label = " "
 
-	windowResize()
+	windowResize(tui.Event{
+		Payload: tui.Resize{
+			Width:  w,
+			Height: h,
+		},
+	})
 	drawables = []tui.Drawable{
 		uiPlayingParagraph,
 		volumeGauge,
@@ -94,9 +100,13 @@ func Init(csvStationsList *stations.List, debugFlag bool) error {
 }
 
 // Init initialize UI
-func windowResize() {
+func windowResize(e tui.Event) {
+	payload := e.Payload.(tui.Resize)
 	tui.Clear()
-	w, h = tui.TerminalDimensions()
+
+	w = payload.Width
+	h = payload.Height
+	fullLineFormatter = fmt.Sprintf("%%-%ds", w)
 
 	uiPlayingParagraph.SetRect(0, -1, w, 3)
 	uiFooterParagraph.SetRect(0, h-3, w, h)
@@ -138,19 +148,6 @@ func Run(d driver.Driver) {
 			render()
 		}
 	}
-}
-
-func toggleDebug() {
-	debug = !debug
-
-	if debug {
-		drawables = append(drawables, uiLoggerList)
-	} else {
-		drawables = drawables[:len(drawables)-1]
-	}
-
-	windowResize()
-	render()
 }
 
 func render() {

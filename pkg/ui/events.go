@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/robopuff/goradio/pkg/driver"
 
@@ -20,11 +21,11 @@ var colorSelected = "(fg:black,bg:white)"
 
 func manageKeyboardEvent(e tui.Event, d driver.Driver) int {
 	if e.Type == tui.ResizeEvent {
-		windowResize()
+		windowResize(e)
 	}
 
 	switch e.ID {
-	case "<Enter>":
+	case "<Enter>", "<MouseLeft>":
 		selected := uiStationsList.SelectedRow
 		selectedStation := stationsList.GetSelected(selected)
 		currentStation := stationsList.GetSelected(current)
@@ -64,9 +65,9 @@ func manageKeyboardEvent(e tui.Event, d driver.Driver) int {
 		d.Mute()
 	case "p":
 		d.Pause()
-	case "k", "<Up>":
+	case "k", "<Up>", "<MouseWheelUp>":
 		uiStationsList.ScrollUp()
-	case "j", "<Down>":
+	case "j", "<Down>", "<MouseWheelDown>":
 		uiStationsList.ScrollDown()
 	case "K", "<PageUp>":
 		uiStationsList.ScrollPageUp()
@@ -80,8 +81,6 @@ func manageKeyboardEvent(e tui.Event, d driver.Driver) int {
 		d.IncVolume()
 	case "-":
 		d.DecVolume()
-	//case "D":
-		//toggleDebug()
 	case "q", "<C-c>", "<Esc>":
 		d.Close()
 		return 1
@@ -114,9 +113,12 @@ func manageDriverLogs(d driver.Driver) {
 				match = volumeRegex.FindStringSubmatch(data)
 				if len(match) > 0 {
 					setVolumeGauge(match[1])
+					continue
 				}
 
-				sendToLog(data[:len(data)-1])
+				if data != "" {
+					sendToLog(strings.Trim(data, "\n"))
+				}
 			}
 		}
 	}
@@ -125,18 +127,20 @@ func manageDriverLogs(d driver.Driver) {
 func setVolumeGauge(value string) {
 	volume, _ := strconv.Atoi(value)
 	volumeGauge.Percent = volume
-	if value == "" {
-		value = " "
+	volumeGauge.Visible = true
+
+	if volume == 0 {
+		volumeGauge.Visible = false
 	}
 
-	volumeGauge.Label = value
 	render()
 }
 
 func setCurrentlyPlaying(currently string) {
 	format := fmt.Sprintf(fullLineFormatter, currentlyPlayingFormat)
 	if currently == "" {
-		currently = "None"
+		format = "%s"
+		currently = ""
 	}
 	uiPlayingParagraph.Text = fmt.Sprintf(format, currently)
 	render()
