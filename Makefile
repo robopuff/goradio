@@ -16,9 +16,8 @@ install: ## Install executable
 clear-build: ## Clear content of build directory
 	rm build/goradio*
 
-release: ## Build for windows, linux and darwin
-	for os in darwin linux windows; do \
+release: ## Build for linux and darwin
+	for os in darwin linux; do \
 		env GOOS=$$os GOARCH=amd64 go build -ldflags="-s -w" -o build/goradio-$$os-amd64; \
-		upx --brute build/goradio-$$os-amd64; \
 	done; \
-	mv build/goradio-windows-amd64 build/goradio-windows-amd64.exe
+	upx --brute build/goradio-*; \
