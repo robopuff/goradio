@@ -1,8 +1,8 @@
-package driver
+package drivers
 
 import "io"
 
-// Driver music playing driver interface
+// Driver music playing drivers interface
 type Driver interface {
 	PipeChan() chan io.ReadCloser
 	CheckPrerequisites() error

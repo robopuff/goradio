@@ -24,7 +24,7 @@ type List struct {
 	stations []*station
 }
 
-// GetRows get list of stations for ui list
+// GetRows get list of stations for gui list
 func (l *List) GetRows(width int) []string {
 	formatter := fmt.Sprintf("%%-%ds", width-2)
 	var list []string
@@ -45,24 +45,28 @@ func (l *List) GetSelected(selected int) *station {
 
 // Reload reloads list
 func (l *List) Reload() {
-	load := Load(l.path)
+	load, err := Load(l.path)
+	if err != nil {
+		log.Fatalf("cannot refresh stations list: %v", err)
+	}
+
 	l.stations = load.stations
 }
 
 // Load load stations from file
-func Load(path string) *List {
+func Load(path string) (*List, error) {
 	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
 			err = downloadStations(path)
 			if err != nil {
-				log.Fatalf("cannot find or install stations: %v", err)
+				return nil, err
 			}
 		}
 	}
 
 	f, err := os.Open(path)
 	if err != nil {
-		log.Fatalf("cannot open stations file: %v", err)
+		return nil, err
 	}
 	defer f.Close()
 
@@ -73,7 +77,7 @@ func Load(path string) *List {
 		if err == io.EOF {
 			break
 		} else if err != nil {
-			log.Fatalf("cannot process stations csv: %v", err)
+			return nil, err
 		}
 
 		s = append(s, &station{
@@ -85,7 +89,7 @@ func Load(path string) *List {
 	return &List{
 		path:     path,
 		stations: s,
-	}
+	}, nil
 }
 
 func downloadStations(path string) error {

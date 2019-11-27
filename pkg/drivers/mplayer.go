@@ -1,4 +1,4 @@
-package driver
+package drivers
 
 import (
 	"errors"
@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// MPlayer mplayer driver
+// MPlayer mplayer drivers
 type MPlayer struct {
 	cliName   string
 	isPlaying bool
@@ -24,7 +24,7 @@ func (driver *MPlayer) PipeChan() chan io.ReadCloser {
 	return driver.pipeChan
 }
 
-//CheckPrerequisites check prerequisites for driver
+//CheckPrerequisites check prerequisites for drivers
 func (driver *MPlayer) CheckPrerequisites() error {
 	if _, err := exec.LookPath(driver.cliName); err != nil {
 		return errors.New("mplayer not found")
@@ -117,7 +117,7 @@ func (driver *MPlayer) sendKey(key string) {
 	driver.in.Write([]byte(key))
 }
 
-// NewMPlayer create new MPlayer driver instance
+// NewMPlayer create new MPlayer drivers instance
 func NewMPlayer(executablePath string) *MPlayer {
 	return &MPlayer{
 		cliName:   executablePath,

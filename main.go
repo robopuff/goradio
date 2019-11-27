@@ -6,12 +6,11 @@ import (
 	"log"
 	"os/user"
 
-	"github.com/robopuff/goradio/pkg/driver"
+	"github.com/robopuff/goradio/pkg/drivers"
+	"github.com/robopuff/goradio/pkg/gui"
+	"github.com/robopuff/goradio/pkg/gui/termui"
 	"github.com/robopuff/goradio/pkg/stations"
-	"github.com/robopuff/goradio/pkg/ui"
 )
-
-var d driver.Driver
 
 func main() {
 	usr, _ := user.Current()
@@ -20,15 +19,25 @@ func main() {
 	flagDebugMode := flag.Bool("d", false, "Debug mode (shows logger window)")
 	flag.Parse()
 
-	d = driver.NewMPlayer(*flagMplayer)
+	d := drivers.NewMPlayer(*flagMplayer)
 	if err := d.CheckPrerequisites(); err != nil {
-		log.Fatalf("system failed driver prerequisites check: %v", err)
+		log.Fatalf("system failed drivers prerequisites check: %v", err)
 	}
 
-	s := stations.Load(*flagStations)
-
-	if err := ui.Init(s, *flagDebugMode); err != nil {
-		log.Fatalf("failed to initialize ui: %v", err)
+	s, err := stations.Load(*flagStations)
+	if err != nil {
+		log.Fatalf("cannot load or download stations list: %v", err)
 	}
-	ui.Run(d)
+
+	var userInterface gui.GUI
+	userInterface = termui.NewTermUI(s, *flagDebugMode)
+	defer (func() {
+		d.Close()
+		userInterface.Close()
+	})()
+
+	if err := userInterface.Init(); err != nil {
+		log.Fatalf("failed to initialize gui: %v", err)
+	}
+	userInterface.Run(d)
 }
