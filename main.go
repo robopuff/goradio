@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/robopuff/goradio/pkg/gui/minimal"
 	"log"
 	"os/user"
 
@@ -17,6 +18,7 @@ func main() {
 	flagStations := flag.String("s", fmt.Sprintf("%s/.config/pyradio/stations.csv", usr.HomeDir), "Stations file path")
 	flagMplayer := flag.String("m", "mplayer", "MPlayer executable")
 	flagDebugMode := flag.Bool("d", false, "Debug mode (shows logger window)")
+	flagMinimal := flag.Bool("minimal", false, "Use minimal ui")
 	flag.Parse()
 
 	d := drivers.NewMPlayer(*flagMplayer)
@@ -31,6 +33,10 @@ func main() {
 
 	var userInterface gui.GUI
 	userInterface = termui.NewTermUI(s, *flagDebugMode)
+	if *flagMinimal {
+		userInterface = minimal.NewMinimal(s, *flagDebugMode)
+	}
+
 	defer (func() {
 		d.Close()
 		userInterface.Close()

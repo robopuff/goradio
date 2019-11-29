@@ -16,9 +16,8 @@ import (
 const (
 	regexTitle  = `(?m)^ICY Info: StreamTitle='(.*?)';`
 	regexVolume = `(?m)Volume: (\d+)`
+	colorSelected = `(fg:black,bg:white)`
 )
-
-var colorSelected = "(fg:black,bg:white)"
 
 type eventsManager struct {
 	ui      *ui
@@ -154,11 +153,11 @@ func (self *eventsManager) manageDriverLogs() {
 
 func (self *eventsManager) setVolumeGauge(value string) {
 	volume, _ := strconv.Atoi(value)
-	self.ui.volumeGauge.Percent = volume
-	self.ui.volumeGauge.Visible = true
+	self.ui.uiVolumeGauge.Percent = volume
+	self.ui.uiVolumeGauge.Visible = true
 
 	if volume == 0 {
-		self.ui.volumeGauge.Visible = false
+		self.ui.uiVolumeGauge.Visible = false
 	}
 
 	self.ui.render()

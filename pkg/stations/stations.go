@@ -13,7 +13,8 @@ import (
 
 const stationsCsvURL = "https://raw.githubusercontent.com/coderholic/pyradio/master/pyradio/stations.csv"
 
-type station struct {
+//Station station structure
+type Station struct {
 	Name string
 	URL  string
 }
@@ -21,7 +22,12 @@ type station struct {
 // List list of available stations
 type List struct {
 	path     string
-	stations []*station
+	stations []*Station
+}
+
+// Count counts number of items
+func (l *List) Count() int {
+	return len(l.stations)
 }
 
 // GetRows get list of stations for gui list
@@ -34,8 +40,8 @@ func (l *List) GetRows(width int) []string {
 	return list
 }
 
-// GetSelected get selected station by it's index
-func (l *List) GetSelected(selected int) *station {
+// GetSelected get selected Station by it's index
+func (l *List) GetSelected(selected int) *Station {
 	if selected < 0 || selected > len(l.stations)-1 {
 		return nil
 	}
@@ -70,7 +76,7 @@ func Load(path string) (*List, error) {
 	}
 	defer f.Close()
 
-	var s []*station
+	var s []*Station
 	reader := csv.NewReader(f)
 	for {
 		line, err := reader.Read()
@@ -80,7 +86,7 @@ func Load(path string) (*List, error) {
 			return nil, err
 		}
 
-		s = append(s, &station{
+		s = append(s, &Station{
 			Name: strings.TrimSpace(line[0]),
 			URL:  strings.TrimSpace(line[1]),
 		})

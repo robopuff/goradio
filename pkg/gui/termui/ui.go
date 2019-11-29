@@ -26,7 +26,7 @@ type ui struct {
 	uiFooterParagraph  *widgets.Paragraph
 	uiStationsList     *widgets.List
 	uiLoggerList       *widgets.List
-	volumeGauge        *volume
+	uiVolumeGauge      *volume
 
 	drawables []tui.Drawable
 }
@@ -77,9 +77,9 @@ func (self *ui) Init() error {
 	self.uiStationsList.BorderStyle.Fg = colorGray
 	self.uiStationsList.WrapText = false
 
-	self.volumeGauge = NewVolume()
-	self.volumeGauge.Border = false
-	self.volumeGauge.Percent = 0
+	self.uiVolumeGauge = NewVolume()
+	self.uiVolumeGauge.Border = false
+	self.uiVolumeGauge.Percent = 0
 
 	self.windowResize(tui.Event{
 		Payload: tui.Resize{
@@ -89,7 +89,7 @@ func (self *ui) Init() error {
 	})
 	self.drawables = []tui.Drawable{
 		self.uiPlayingParagraph,
-		self.volumeGauge,
+		self.uiVolumeGauge,
 		self.uiFooterParagraph,
 		self.uiStationsList,
 	}
@@ -128,7 +128,7 @@ func (self *ui) windowResize(e tui.Event) {
 	self.uiPlayingParagraph.SetRect(0, -1, self.w, 3)
 	self.uiFooterParagraph.SetRect(0, self.h-3, self.w, self.h)
 	self.uiLoggerList.SetRect(self.w/2, 1, self.w-1, self.h-2)
-	self.volumeGauge.SetRect(self.w-21, -1, self.w-1, 2)
+	self.uiVolumeGauge.SetRect(self.w-21, -1, self.w-1, 2)
 
 	if self.debug {
 		self.uiStationsList.SetRect(0, 1, (self.w/2)-1, self.h-2)
