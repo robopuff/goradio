@@ -7,12 +7,12 @@ import (
 	"github.com/robopuff/goradio/pkg/gui"
 	"github.com/robopuff/goradio/pkg/stations"
 
-	tui "github.com/gizak/termui/v3"
+	termui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
 )
 
 const (
-	colorGray tui.Color = 8
+	colorGray termui.Color = 8
 )
 
 type ui struct {
@@ -28,7 +28,7 @@ type ui struct {
 	uiLoggerList       *widgets.List
 	uiVolumeGauge      *volume
 
-	drawables []tui.Drawable
+	drawables []termui.Drawable
 }
 
 func NewTermUI(stationsList *stations.List, debug bool) *ui {
@@ -39,118 +39,118 @@ func NewTermUI(stationsList *stations.List, debug bool) *ui {
 }
 
 // Init initialize UI
-func (self *ui) Init() error {
-	if err := tui.Init(); nil != err {
+func (u *ui) Init() error {
+	if err := termui.Init(); nil != err {
 		return err
 	}
 
-	self.w, self.h = tui.TerminalDimensions()
-	self.fullLineFormatter = fmt.Sprintf("%%-%ds", self.w)
+	u.w, u.h = termui.TerminalDimensions()
+	u.fullLineFormatter = fmt.Sprintf("%%-%ds", u.w)
 
-	self.uiPlayingParagraph = widgets.NewParagraph()
-	self.uiPlayingParagraph.Border = false
-	self.uiPlayingParagraph.TextStyle.Fg = tui.ColorRed
+	u.uiPlayingParagraph = widgets.NewParagraph()
+	u.uiPlayingParagraph.Border = false
+	u.uiPlayingParagraph.TextStyle.Fg = termui.ColorRed
 
-	self.uiFooterParagraph = widgets.NewParagraph()
-	self.uiFooterParagraph.Text = fmt.Sprintf(self.fullLineFormatter, gui.HelpFooter)
-	self.uiFooterParagraph.WrapText = false
-	self.uiFooterParagraph.PaddingLeft = -1
-	self.uiFooterParagraph.PaddingRight = -1
-	self.uiFooterParagraph.Border = false
-	self.uiFooterParagraph.TextStyle.Fg = tui.ColorBlack
-	self.uiFooterParagraph.TextStyle.Bg = colorGray
+	u.uiFooterParagraph = widgets.NewParagraph()
+	u.uiFooterParagraph.Text = fmt.Sprintf(u.fullLineFormatter, gui.HelpFooter)
+	u.uiFooterParagraph.WrapText = false
+	u.uiFooterParagraph.PaddingLeft = -1
+	u.uiFooterParagraph.PaddingRight = -1
+	u.uiFooterParagraph.Border = false
+	u.uiFooterParagraph.TextStyle.Fg = termui.ColorBlack
+	u.uiFooterParagraph.TextStyle.Bg = colorGray
 
-	self.uiLoggerList = widgets.NewList()
-	self.uiLoggerList.Title = "[ log ]"
-	self.uiLoggerList.TextStyle.Fg = tui.ColorBlue
-	self.uiLoggerList.BorderStyle.Fg = colorGray
-	self.uiLoggerList.SelectedRowStyle.Fg = self.uiLoggerList.TextStyle.Fg
-	self.uiLoggerList.Rows = []string{""}
+	u.uiLoggerList = widgets.NewList()
+	u.uiLoggerList.Title = "[ log ]"
+	u.uiLoggerList.TextStyle.Fg = termui.ColorBlue
+	u.uiLoggerList.BorderStyle.Fg = colorGray
+	u.uiLoggerList.SelectedRowStyle.Fg = u.uiLoggerList.TextStyle.Fg
+	u.uiLoggerList.Rows = []string{""}
 
-	self.uiStationsList = widgets.NewList()
-	self.uiStationsList.Title = "[ stations ]"
-	self.uiStationsList.TextStyle.Fg = 8
-	self.uiStationsList.TextStyle.Modifier = tui.ModifierBold
-	self.uiStationsList.SelectedRowStyle.Modifier = tui.ModifierBold
-	self.uiStationsList.SelectedRowStyle.Fg = tui.ColorWhite
-	self.uiStationsList.SelectedRowStyle.Bg = colorGray
-	self.uiStationsList.BorderStyle.Fg = colorGray
-	self.uiStationsList.WrapText = false
+	u.uiStationsList = widgets.NewList()
+	u.uiStationsList.Title = "[ stations ]"
+	u.uiStationsList.TextStyle.Fg = 8
+	u.uiStationsList.TextStyle.Modifier = termui.ModifierBold
+	u.uiStationsList.SelectedRowStyle.Modifier = termui.ModifierBold
+	u.uiStationsList.SelectedRowStyle.Fg = termui.ColorWhite
+	u.uiStationsList.SelectedRowStyle.Bg = colorGray
+	u.uiStationsList.BorderStyle.Fg = colorGray
+	u.uiStationsList.WrapText = false
 
-	self.uiVolumeGauge = NewVolume()
-	self.uiVolumeGauge.Border = false
-	self.uiVolumeGauge.Percent = 0
+	u.uiVolumeGauge = NewVolume()
+	u.uiVolumeGauge.Border = false
+	u.uiVolumeGauge.Percent = 0
 
-	self.windowResize(tui.Event{
-		Payload: tui.Resize{
-			Width:  self.w,
-			Height: self.h,
+	u.windowResize(termui.Event{
+		Payload: termui.Resize{
+			Width:  u.w,
+			Height: u.h,
 		},
 	})
-	self.drawables = []tui.Drawable{
-		self.uiPlayingParagraph,
-		self.uiVolumeGauge,
-		self.uiFooterParagraph,
-		self.uiStationsList,
+	u.drawables = []termui.Drawable{
+		u.uiPlayingParagraph,
+		u.uiVolumeGauge,
+		u.uiFooterParagraph,
+		u.uiStationsList,
 	}
 
-	if self.debug {
-		self.drawables = append(self.drawables, self.uiLoggerList)
+	if u.debug {
+		u.drawables = append(u.drawables, u.uiLoggerList)
 	}
 
 	return nil
 }
 
 // Run run UI and events
-func (self *ui) Run(d drivers.Driver) {
-	self.render()
+func (u *ui) Run(d drivers.Driver) {
+	u.render()
 
-	events := newEventsManager(self, d)
+	events := newEventsManager(u, d)
 	go events.manageDriverLogs()
 	events.run()
 }
 
-func (self *ui) Close() {
-	tui.Close()
+func (u *ui) Close() {
+	termui.Close()
 	if r := recover(); r != nil {
 		fmt.Printf("panic: %v\n", r)
 	}
 }
 
-func (self *ui) windowResize(e tui.Event) {
-	payload := e.Payload.(tui.Resize)
-	tui.Clear()
+func (u *ui) windowResize(e termui.Event) {
+	payload := e.Payload.(termui.Resize)
+	termui.Clear()
 
-	self.w = payload.Width
-	self.h = payload.Height
-	self.fullLineFormatter = fmt.Sprintf("%%-%ds", self.w)
+	u.w = payload.Width
+	u.h = payload.Height
+	u.fullLineFormatter = fmt.Sprintf("%%-%ds", u.w)
 
-	self.uiPlayingParagraph.SetRect(0, -1, self.w, 3)
-	self.uiFooterParagraph.SetRect(0, self.h-3, self.w, self.h)
-	self.uiLoggerList.SetRect(self.w/2, 1, self.w-1, self.h-2)
-	self.uiVolumeGauge.SetRect(self.w-21, -1, self.w-1, 2)
+	u.uiPlayingParagraph.SetRect(0, -1, u.w, 3)
+	u.uiFooterParagraph.SetRect(0, u.h-3, u.w, u.h)
+	u.uiLoggerList.SetRect(u.w/2, 1, u.w-1, u.h-2)
+	u.uiVolumeGauge.SetRect(u.w-21, -1, u.w-1, 2)
 
-	if self.debug {
-		self.uiStationsList.SetRect(0, 1, (self.w/2)-1, self.h-2)
+	if u.debug {
+		u.uiStationsList.SetRect(0, 1, (u.w/2)-1, u.h-2)
 	} else {
-		self.uiStationsList.SetRect(0, 1, self.w, self.h-2)
+		u.uiStationsList.SetRect(0, 1, u.w, u.h-2)
 	}
 
-	self.uiStationsList.Rows = self.stationsList.GetRows(self.uiStationsList.Size().X)
+	u.uiStationsList.Rows = u.stationsList.GetRows(u.uiStationsList.Size().X)
 }
 
-func (self *ui) render() {
-	tui.Render(self.drawables...)
+func (u *ui) render() {
+	termui.Render(u.drawables...)
 }
 
-func (self *ui) log(m string) {
-	self.uiLoggerList.Rows = append(self.uiLoggerList.Rows, fmt.Sprintf("%s", m))
-	if len(self.uiLoggerList.Rows) > 1000 {
-		self.uiLoggerList.Rows = self.uiLoggerList.Rows[500:]
+func (u *ui) log(m string) {
+	u.uiLoggerList.Rows = append(u.uiLoggerList.Rows, fmt.Sprintf("%s", m))
+	if len(u.uiLoggerList.Rows) > 1000 {
+		u.uiLoggerList.Rows = u.uiLoggerList.Rows[500:]
 	}
 
-	self.uiLoggerList.ScrollBottom()
-	if self.debug {
-		tui.Render(self.uiLoggerList)
+	u.uiLoggerList.ScrollBottom()
+	if u.debug {
+		termui.Render(u.uiLoggerList)
 	}
 }

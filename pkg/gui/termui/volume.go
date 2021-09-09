@@ -16,7 +16,7 @@ type volume struct {
 	characters []rune
 }
 
-//NewVolume create new volume custom widget
+// NewVolume create new volume custom widget
 func NewVolume() *volume {
 	return &volume{
 		Block: *tui.NewBlock(),
@@ -34,28 +34,28 @@ func NewVolume() *volume {
 	}
 }
 
-func (self *volume) Draw(buf *tui.Buffer) {
-	self.Block.Draw(buf)
+func (v *volume) Draw(buf *tui.Buffer) {
+	v.Block.Draw(buf)
 
-	if !self.Visible {
+	if !v.Visible {
 		return
 	}
 
-	label := strconv.Itoa(self.Percent)
+	label := strconv.Itoa(v.Percent)
 
-	barXCoordinate := self.Inner.Min.X
-	barYCoordinate := self.Inner.Min.Y + ((self.Inner.Dy() - 1) / 2)
-	barDxCoordinate := self.Inner.Max.X - barXCoordinate - (len(label) + 1)
+	barXCoordinate := v.Inner.Min.X
+	barYCoordinate := v.Inner.Min.Y + ((v.Inner.Dy() - 1) / 2)
+	barDxCoordinate := v.Inner.Max.X - barXCoordinate - (len(label) + 1)
 
 	// plot bar
-	barWidth := int((float64(self.Percent) / 100) * float64(barDxCoordinate))
-	barStyle := tui.NewStyle(self.BarColors[0], tui.ColorClear)
-	for i, char := range self.characters {
+	barWidth := int((float64(v.Percent) / 100) * float64(barDxCoordinate))
+	barStyle := tui.NewStyle(v.BarColors[0], tui.ColorClear)
+	for i, char := range v.characters {
 		if i > barWidth {
 			break
 		}
 
-		if c, ok := self.BarColors[i]; ok {
+		if c, ok := v.BarColors[i]; ok {
 			barStyle = tui.NewStyle(c, tui.ColorClear)
 		}
 
@@ -63,10 +63,10 @@ func (self *volume) Draw(buf *tui.Buffer) {
 	}
 
 	// plot label
-	labelXCoordinate := self.Inner.Max.X - len(label)
-	labelYCoordinate := self.Inner.Min.Y + ((self.Inner.Dy() - 1) / 2)
-	if labelYCoordinate < self.Inner.Max.Y {
-		style := self.LabelStyle
+	labelXCoordinate := v.Inner.Max.X - len(label)
+	labelYCoordinate := v.Inner.Min.Y + ((v.Inner.Dy() - 1) / 2)
+	if labelYCoordinate < v.Inner.Max.Y {
+		style := v.LabelStyle
 		for i, char := range label {
 			buf.SetCell(tui.NewCell(char, style), image.Pt(labelXCoordinate+i, labelYCoordinate))
 		}

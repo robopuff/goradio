@@ -33,32 +33,32 @@ func newEventsManager(ui *ui, driver drivers.Driver) *eventsManager {
 	}
 }
 
-func (self *eventsManager) run() {
+func (em *eventsManager) run() {
 	uiEvents := tui.PollEvents()
 	for {
 		select {
 		case e := <-uiEvents:
-			if r := self.manageKeyboardEvent(e); r != 0 {
+			if r := em.manageKeyboardEvent(e); r != 0 {
 				return
 			}
-			self.ui.render()
+			em.ui.render()
 		}
 	}
 }
 
-func (self *eventsManager) manageKeyboardEvent(e tui.Event) int {
+func (em *eventsManager) manageKeyboardEvent(e tui.Event) int {
 	if e.Type == tui.ResizeEvent {
-		self.ui.windowResize(e)
+		em.ui.windowResize(e)
 	}
 
 	switch e.ID {
 	case "<Enter>":
-		selected := self.ui.uiStationsList.SelectedRow
-		selectedStation := self.ui.stationsList.GetSelected(selected)
-		currentStation := self.ui.stationsList.GetSelected(self.current)
+		selected := em.ui.uiStationsList.SelectedRow
+		selectedStation := em.ui.stationsList.GetSelected(selected)
+		currentStation := em.ui.stationsList.GetSelected(em.current)
 
-		if selected == self.current {
-			self.driver.Pause()
+		if selected == em.current {
+			em.driver.Pause()
 			return 0
 		}
 
@@ -67,117 +67,117 @@ func (self *eventsManager) manageKeyboardEvent(e tui.Event) int {
 		}
 
 		if currentStation != nil {
-			self.removeStationSelection()
+			em.removeStationSelection()
 		}
 
-		self.driver.Play(selectedStation.URL)
-		self.current = selected
-		self.setVolumeGauge("25")
-		self.addStationSelection()
+		em.driver.Play(selectedStation.URL)
+		em.current = selected
+		em.setVolumeGauge("25")
+		em.addStationSelection()
 	case "s":
-		if self.current < 0 {
+		if em.current < 0 {
 			return 0
 		}
 
-		self.driver.Close()
-		self.removeStationSelection()
-		self.setVolumeGauge("")
-		self.current = -1
+		em.driver.Close()
+		em.removeStationSelection()
+		em.setVolumeGauge("")
+		em.current = -1
 	case "R":
-		self.driver.Close()
-		self.current = -1
-		self.ui.stationsList.Reload()
-		self.ui.uiStationsList.Rows = self.ui.stationsList.GetRows(self.ui.uiStationsList.Size().X)
+		em.driver.Close()
+		em.current = -1
+		em.ui.stationsList.Reload()
+		em.ui.uiStationsList.Rows = em.ui.stationsList.GetRows(em.ui.uiStationsList.Size().X)
 	case "m":
-		self.driver.Mute()
+		em.driver.Mute()
 	case "p":
-		self.driver.Pause()
+		em.driver.Pause()
 	case "k", "<Up>":
-		self.ui.uiStationsList.ScrollUp()
+		em.ui.uiStationsList.ScrollUp()
 	case "j", "<Down>":
-		self.ui.uiStationsList.ScrollDown()
+		em.ui.uiStationsList.ScrollDown()
 	case "K", "<PageUp>":
-		self.ui.uiStationsList.ScrollPageUp()
+		em.ui.uiStationsList.ScrollPageUp()
 	case "J", "<PageDown>":
-		self.ui.uiStationsList.ScrollPageDown()
+		em.ui.uiStationsList.ScrollPageDown()
 	case "h", "<Left>", "<MouseWheelUp>":
-		self.ui.uiLoggerList.ScrollPageUp()
+		em.ui.uiLoggerList.ScrollPageUp()
 	case "l", "<Right>", "<MouseWheelDown>":
-		self.ui.uiLoggerList.ScrollPageDown()
+		em.ui.uiLoggerList.ScrollPageDown()
 	case "+", "=":
-		self.driver.IncVolume()
+		em.driver.IncVolume()
 	case "-":
-		self.driver.DecVolume()
+		em.driver.DecVolume()
 	case "q", "<C-c>", "<Esc>":
-		self.driver.Close()
+		em.driver.Close()
 		return 1
 	}
 
 	return 0
 }
 
-func (self *eventsManager) manageDriverLogs() {
+func (em *eventsManager) manageDriverLogs() {
 	titleRegex := regexp.MustCompile(regexTitle)
 	volumeRegex := regexp.MustCompile(regexVolume)
 
 	for {
 		select {
-		case outPipe := <-self.driver.PipeChan():
+		case outPipe := <-em.driver.PipeChan():
 			reader := bufio.NewReader(outPipe)
 			for {
 				data, err := reader.ReadString('\n')
 				if err != nil {
-					self.setCurrentlyPlaying("")
-					self.ui.log(fmt.Sprintf("Pipe closed: %v", err.Error()))
+					em.setCurrentlyPlaying("")
+					em.ui.log(fmt.Sprintf("Pipe closed: %v", err.Error()))
 					break
 				}
 
 				match := titleRegex.FindStringSubmatch(data)
 				if len(match) > 0 {
-					self.setCurrentlyPlaying(match[1])
+					em.setCurrentlyPlaying(match[1])
 				}
 
 				match = volumeRegex.FindStringSubmatch(data)
 				if len(match) > 0 {
-					self.setVolumeGauge(match[1])
+					em.setVolumeGauge(match[1])
 					continue
 				}
 
 				if data != "" {
-					self.ui.log(strings.Trim(data, "\n"))
+					em.ui.log(strings.Trim(data, "\n"))
 				}
 			}
 		}
 	}
 }
 
-func (self *eventsManager) setVolumeGauge(value string) {
+func (em *eventsManager) setVolumeGauge(value string) {
 	volume, _ := strconv.Atoi(value)
-	self.ui.uiVolumeGauge.Percent = volume
-	self.ui.uiVolumeGauge.Visible = true
+	em.ui.uiVolumeGauge.Percent = volume
+	em.ui.uiVolumeGauge.Visible = true
 
 	if volume == 0 {
-		self.ui.uiVolumeGauge.Visible = false
+		em.ui.uiVolumeGauge.Visible = false
 	}
 
-	self.ui.render()
+	em.ui.render()
 }
 
-func (self *eventsManager) setCurrentlyPlaying(currently string) {
-	format := fmt.Sprintf(self.ui.fullLineFormatter, gui.CurrentlyPlayingFormat)
+func (em *eventsManager) setCurrentlyPlaying(currently string) {
+	format := fmt.Sprintf(em.ui.fullLineFormatter, gui.CurrentlyPlayingFormat)
 	if currently == "" {
 		format = "%s"
 		currently = ""
 	}
-	self.ui.uiPlayingParagraph.Text = fmt.Sprintf(format, currently)
-	self.ui.render()
+	em.ui.uiPlayingParagraph.Text = fmt.Sprintf(format, currently)
+	em.ui.render()
 }
 
-func (self *eventsManager) addStationSelection() {
-	self.ui.uiStationsList.Rows[self.current] = fmt.Sprintf("[%v]%s", self.ui.uiStationsList.Rows[self.current], colorSelected)
+func (em *eventsManager) addStationSelection() {
+	em.ui.uiStationsList.Rows[em.current] = fmt.Sprintf("[%v]%s", em.ui.uiStationsList.Rows[em.current], colorSelected)
 }
 
-func (self *eventsManager) removeStationSelection() {
-	rowString := string(self.ui.uiStationsList.Rows[self.current])
-	self.ui.uiStationsList.Rows[self.current] = rowString[1 : len(rowString)-1-len(colorSelected)]
+func (em *eventsManager) removeStationSelection() {
+	rowString := string(em.ui.uiStationsList.Rows[em.current])
+	em.ui.uiStationsList.Rows[em.current] = rowString[1 : len(rowString)-1-len(colorSelected)]
 }

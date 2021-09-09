@@ -4,12 +4,13 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"github.com/robopuff/goradio/pkg/drivers"
-	"github.com/robopuff/goradio/pkg/stations"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/robopuff/goradio/pkg/drivers"
+	"github.com/robopuff/goradio/pkg/stations"
 )
 
 const (
@@ -28,20 +29,20 @@ func NewMinimal(list *stations.List, debug bool) *ui {
 	}
 }
 
-func (self *ui) Init() error {
+func (u *ui) Init() error {
 	return nil
 }
 
-func (self *ui) Run(d drivers.Driver) {
+func (u *ui) Run(d drivers.Driver) {
 	fmt.Println("List of stations:")
-	for i, v := range self.stationsList.GetRows(0) {
+	for i, v := range u.stationsList.GetRows(0) {
 		fmt.Printf(" [%v] %v\n", i+1, v)
 	}
 
 	var err error
 	var selected *stations.Station
 	for {
-		selected, err = self.selectRadio()
+		selected, err = u.selectRadio()
 		if err != nil {
 			fmt.Printf("Invalid selection: %s\n", err)
 			continue
@@ -63,30 +64,30 @@ func (self *ui) Run(d drivers.Driver) {
 					break
 				}
 
-				if self.debug {
+				if u.debug {
 					fmt.Print(data)
 					continue
 				}
 
 				match := titleRegex.FindStringSubmatch(data)
 				if len(match) > 0 {
-					self.setCurrentlyPlaying(match[1])
+					u.setCurrentlyPlaying(match[1])
 				}
 			}
 		}
 	}
 }
 
-func (self *ui) Close() {
+func (u *ui) Close() {
 	return
 }
 
-func (self *ui) setCurrentlyPlaying(msg string) {
+func (u *ui) setCurrentlyPlaying(msg string) {
 	fmt.Printf("Currently playing: %v\n", msg)
 }
 
-func (self *ui) selectRadio() (*stations.Station, error) {
-	fmt.Printf("Your selection [1-%d]: ", self.stationsList.Count())
+func (u *ui) selectRadio() (*stations.Station, error) {
+	fmt.Printf("Your selection [1-%d]: ", u.stationsList.Count())
 
 	reader := bufio.NewReader(os.Stdin)
 	r, _ := reader.ReadString('\n')
@@ -97,7 +98,7 @@ func (self *ui) selectRadio() (*stations.Station, error) {
 		return nil, err
 	}
 
-	selected := self.stationsList.GetSelected(ri-1)
+	selected := u.stationsList.GetSelected(ri-1)
 	if selected == nil {
 		return nil, errors.New("invalid station selected")
 	}
